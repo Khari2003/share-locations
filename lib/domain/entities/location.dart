@@ -21,4 +21,13 @@ class Location with EquatableMixin {
 
   @override
   String toString() => 'Location(address: $address, city: $city, postalCode: $postalCode, country: $country, coordinates: $coordinates)';
+
+  // Thêm phương thức toJson
+  Map<String, dynamic> toJson() => {
+        if (address != null) 'address': address,
+        if (city != null) 'city': city,
+        if (postalCode != null) 'postalCode': postalCode,
+        if (country != null) 'country': country,
+        if (coordinates != null) 'coordinates': coordinates!.toJson(),
+      };
 }

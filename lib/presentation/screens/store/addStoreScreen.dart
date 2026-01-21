@@ -23,6 +23,7 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
   bool _isLoading = false;
 
   Future<void> _submitStore() async {
+    // Kiểm tra tính hợp lệ của form
     if (_formKey.currentState == null || !_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng kiểm tra lại biểu mẫu')),
@@ -30,8 +31,11 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
       return;
     }
 
+    // Lấy instance của StoreViewModel
     final storeViewModel = Provider.of<StoreViewModel>(context, listen: false);
     final formState = storeFormKey.currentState;
+    
+    // Kiểm tra xem formState có tồn tại không
     if (formState == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lỗi: Không thể lấy dữ liệu biểu mẫu')),
@@ -39,6 +43,7 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
       return;
     }
 
+    // Kiểm tra xem người dùng đã chọn vị trí với tọa độ hợp lệ chưa
     if (storeViewModel.selectedLocation?.coordinates == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng chọn vị trí có tọa độ')),
@@ -46,12 +51,14 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
       return;
     }
 
+    // Bật trạng thái loading
     setState(() => _isLoading = true);
 
     try {
-      // Tải hình ảnh lên Cloudinary
+      // Tải tất cả hình ảnh đã chọn lên Cloudinary và nhận về danh sách URL
       final imageUrls = await storeViewModel.uploadImages(storeViewModel.selectedImages);
 
+      // Tạo đối tượng StoreModel với dữ liệu từ form
       final store = StoreModel(
         name: formState.name!,
         type: formState.type!,
@@ -62,30 +69,40 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
         images: imageUrls,
         createdAt: DateTime.now(),
         reviews: [],
-        owner: widget.authViewModel.auth?.id ?? 'unknown',
-        rating: 0.0,
+        owner: widget.authViewModel.auth?.id ?? 'unknown', // ID người tạo
+        rating: 0.0, // Rating ban đầu
       );
 
+      // In ra dữ liệu store để debug
       debugPrint('Store to be sent: ${store.toJson()}');
 
+      // Gửi request tạo nhà hàng mới
       await storeViewModel.createStore(store);
 
+      // Tắt trạng thái loading
       setState(() => _isLoading = false);
 
+      // Kiểm tra kết quả tạo nhà hàng
       if (storeViewModel.errorMessage != null) {
+        // Hiển thị thông báo lỗi nếu có
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Tạo cửa hàng thất bại: ${storeViewModel.errorMessage}')),
+          SnackBar(content: Text('Tạo nhà hàng thất bại: ${storeViewModel.errorMessage}')),
         );
       } else {
-        // Reset form after successful creation
+        // Tạo thành công: Reset form và dữ liệu
         formState.reset();
         storeViewModel.reset();
+        
+        // Hiển thị thông báo thành công
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tạo cửa hàng thành công')),
+          const SnackBar(content: Text('Tạo nhà hàng thành công')),
         );
+        
+        // Chuyển hướng về màn hình map
         Navigator.pushReplacementNamed(context, '/map');
       }
     } catch (e) {
+      // Xử lý lỗi ngoại lệ
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi: $e')),
@@ -100,7 +117,7 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text(
-            'Thêm cửa hàng mới',
+            'Thêm nhà hàng mới',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
           ),
           centerTitle: true,
@@ -126,7 +143,7 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Thông tin cửa hàng',
+                              'Thông tin nhà hàng',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -137,7 +154,7 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
                             StoreFormWidget(key: storeFormKey),
                             const SizedBox(height: 24),
                             const Text(
-                              'Hình ảnh cửa hàng',
+                              'Hình ảnh nhà hàng',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -152,7 +169,7 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
                             ),
                             const SizedBox(height: 24),
                             const Text(
-                              'Vị trí cửa hàng',
+                              'Vị trí nhà hàng',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -180,7 +197,7 @@ class _AddStoreScreenState extends State<AddStoreScreen> {
                                   elevation: 4,
                                 ),
                                 child: const Text(
-                                  'Thêm cửa hàng',
+                                  'Thêm nhà hàng',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,

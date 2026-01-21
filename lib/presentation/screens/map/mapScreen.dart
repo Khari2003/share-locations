@@ -145,38 +145,38 @@ class _MapScreenState extends State<MapScreen> {
                                 viewModel: viewModel,
                                 onButtonPressed: _onButtonPressed,
                               ),
-                            Positioned(
-                              right: 0,
-                              top: MediaQuery.of(context).size.height / 2 - 50,
-                              child: Visibility(
-                                visible: areButtonsVisible,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    Navigator.pushNamed(context, '/profile');
-                                    _onButtonPressed();
-                                  },
-                                  child: Container(
-                                    width: 50,
-                                    height: 100,
-                                    decoration: BoxDecoration(
-                                      color: appTheme().primaryColor,
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(50),
-                                        bottomLeft: Radius.circular(50),
-                                      ),
-                                      boxShadow: const [
-                                        BoxShadow(color: Colors.black26, blurRadius: 4),
-                                      ],
-                                    ),
-                                    child: const Icon(
-                                      Icons.person,
-                                      color: Colors.white,
-                                      size: 30,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
+                            // Positioned(
+                            //   right: 0,
+                            //   top: MediaQuery.of(context).size.height / 2 - 50,
+                            //   child: Visibility(
+                            //     visible: areButtonsVisible,
+                            //     child: GestureDetector(
+                            //       onTap: () {
+                            //         Navigator.pushNamed(context, '/profile');
+                            //         _onButtonPressed();
+                            //       },
+                            //       child: Container(
+                            //         width: 50,
+                            //         height: 100,
+                            //         decoration: BoxDecoration(
+                            //           color: appTheme().primaryColor,
+                            //           borderRadius: const BorderRadius.only(
+                            //             topLeft: Radius.circular(50),
+                            //             bottomLeft: Radius.circular(50),
+                            //           ),
+                            //           boxShadow: const [
+                            //             BoxShadow(color: Colors.black26, blurRadius: 4),
+                            //           ],
+                            //         ),
+                            //         child: const Icon(
+                            //           Icons.person,
+                            //           color: Colors.white,
+                            //           size: 30,
+                            //         ),
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ),
                           ],
                         ),
                 ),

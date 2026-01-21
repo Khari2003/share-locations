@@ -16,7 +16,7 @@ class ApiEndpoints {
   static const String refreshToken = '$baseUrl/api/auth/refresh-token'; // POST: Làm mới accessToken bằng refreshToken
 
   // User endpoints
-  static const String userById = '$baseUrl/api/users/'; // GET, PUT: Lấy/cập nhật thông tin user
+  static const String userById = '$baseUrl/api/users/'; // GET: Lấy/cập nhật thông tin user
 
   // Store endpoints
   static const String stores = '$baseUrl/api/stores'; // GET: Lấy danh sách cửa hàng
@@ -28,4 +28,7 @@ class ApiEndpoints {
   // Review endpoints
   static const String leaveReview = '$baseUrl/api/stores/:id/reviews'; // POST: Gửi đánh giá cho cửa hàng
   static const String getStoreReviews = '$baseUrl/api/stores/:id/reviews'; // GET: Lấy danh sách đánh giá của cửa hàng
+
+  // OCR endpoints
+  static const String ocrMenu = '$baseUrl/api/ocr/menu'; // POST: OCR để lấy menu từ ảnh
 }

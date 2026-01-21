@@ -15,6 +15,7 @@ class CoordinateModel extends Coordinates {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'latitude': latitude,

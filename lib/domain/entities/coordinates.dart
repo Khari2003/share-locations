@@ -10,4 +10,8 @@ class Coordinates {
 
   @override
   String toString() => 'Coordinates(latitude: $latitude, longitude: $longitude)';
+
+  Map<String, dynamic> toJson() => {
+        'coordinates': [longitude, latitude],
+      };
 }

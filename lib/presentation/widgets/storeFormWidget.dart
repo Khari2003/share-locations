@@ -3,9 +3,13 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/domain/entities/store.dart';
 import 'package:my_app/presentation/screens/store/storeViewModel.dart';
+import 'package:my_app/presentation/widgets/menuOcrWidget.dart';
+import 'package:my_app/di/injectionContainer.dart' as di;
+import 'package:my_app/domain/usecases/extractMenuFromImage.dart';
 import 'package:provider/provider.dart';
 
-// Widget form nhập thông tin cửa hàng
+/// Widget form nhập thông tin cửa hàng
+/// Bao gồm: tên, loại, mô tả, mức giá và thực đơn
 class StoreFormWidget extends StatefulWidget {
   final String? initialName; // Tên ban đầu
   final String? initialDescription; // Mô tả ban đầu
@@ -26,7 +30,7 @@ class StoreFormWidget extends StatefulWidget {
   _StoreFormWidgetState createState() => _StoreFormWidgetState();
 }
 
-// Trạng thái của form cửa hàng
+/// Trạng thái của form cửa hàng
 class _StoreFormWidgetState extends State<StoreFormWidget> {
   final _nameController = TextEditingController(); // Controller tên
   final _descriptionController = TextEditingController(); // Controller mô tả
@@ -35,6 +39,7 @@ class _StoreFormWidgetState extends State<StoreFormWidget> {
   final _menuItemPriceController = TextEditingController(); // Controller giá món
   String? _selectedType; // Loại cửa hàng được chọn
 
+  // Danh sách loại cửa hàng (phải khớp với backend)
   final List<String> _storeTypes = [
     'chay-phat-giao',
     'chay-a-au',
@@ -42,10 +47,12 @@ class _StoreFormWidgetState extends State<StoreFormWidget> {
     'com-chay-binh-dan',
     'buffet-chay',
     'chay-ton-giao-khac',
-  ]; // Danh sách loại cửa hàng
+  ];
 
-  final List<String> _priceRanges = ['Low', 'Moderate', 'High']; // Danh sách mức giá
+  // Danh sách mức giá
+  final List<String> _priceRanges = ['Low', 'Moderate', 'High'];
 
+  // Nhãn hiển thị cho loại cửa hàng
   final Map<String, String> _storeTypeLabels = {
     'chay-phat-giao': 'Chay Phật giáo',
     'chay-a-au': 'Chay Á - Âu',
@@ -53,21 +60,25 @@ class _StoreFormWidgetState extends State<StoreFormWidget> {
     'com-chay-binh-dan': 'Cơm chay bình dân',
     'buffet-chay': 'Buffet chay',
     'chay-ton-giao-khac': 'Chay tôn giáo khác',
-  }; // Nhãn loại cửa hàng
+  };
 
+  // Nhãn hiển thị cho mức giá
   final Map<String, String> _priceRangeLabels = {
     'Low': 'Thấp',
     'Moderate': 'Trung bình',
     'High': 'Cao',
-  }; // Nhãn mức giá
+  };
 
   @override
   void initState() {
     super.initState();
+    // Khởi tạo giá trị ban đầu
     _nameController.text = widget.initialName ?? '';
     _descriptionController.text = widget.initialDescription ?? '';
     _priceRangeController.text = _priceRanges.contains(widget.initialPriceRange) ? widget.initialPriceRange ?? '' : '';
     _selectedType = _storeTypes.contains(widget.initialType) ? widget.initialType : null;
+    
+    // Set menu items ban đầu nếu có
     if (widget.initialMenu != null) {
       Provider.of<StoreViewModel>(context, listen: false).setMenuItems(widget.initialMenu!);
     }
@@ -75,6 +86,7 @@ class _StoreFormWidgetState extends State<StoreFormWidget> {
 
   @override
   void dispose() {
+    // Giải phóng bộ nhớ
     _nameController.dispose();
     _descriptionController.dispose();
     _priceRangeController.dispose();
@@ -83,7 +95,7 @@ class _StoreFormWidgetState extends State<StoreFormWidget> {
     super.dispose();
   }
 
-  // Reset form fields
+  /// Reset tất cả các trường trong form
   void reset() {
     _nameController.clear();
     _descriptionController.clear();
@@ -94,7 +106,7 @@ class _StoreFormWidgetState extends State<StoreFormWidget> {
     setState(() {});
   }
 
-  // Thêm món vào thực đơn
+  /// Thêm món vào thực đơn thủ công
   void _addMenuItem() {
     if (_menuItemNameController.text.isNotEmpty && _menuItemPriceController.text.isNotEmpty) {
       try {
@@ -118,6 +130,22 @@ class _StoreFormWidgetState extends State<StoreFormWidget> {
     }
   }
 
+  /// Xử lý khi menu được trích xuất từ OCR
+  /// [extractedMenu] - Danh sách món ăn đã được AI đọc từ ảnh
+  void _handleOcrMenuExtracted(List<MenuItem> extractedMenu) {
+    final storeViewModel = Provider.of<StoreViewModel>(
+      context, 
+      listen: false
+    );
+    
+    // Thêm các món ăn vào danh sách
+    for (var item in extractedMenu) {
+      storeViewModel.addMenuItem(item);
+    }
+    
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     Provider.of<StoreViewModel>(context, listen: false);
@@ -134,6 +162,7 @@ class _StoreFormWidgetState extends State<StoreFormWidget> {
           validator: (value) => value!.isEmpty ? 'Vui lòng nhập tên cửa hàng' : null,
         ),
         const SizedBox(height: 16),
+        
         // Dropdown chọn loại cửa hàng
         DropdownButtonFormField<String>(
           value: _selectedType,
@@ -151,6 +180,7 @@ class _StoreFormWidgetState extends State<StoreFormWidget> {
           validator: (value) => value == null ? 'Vui lòng chọn loại cửa hàng' : null,
         ),
         const SizedBox(height: 16),
+        
         // Ô nhập mô tả
         TextFormField(
           controller: _descriptionController,
@@ -158,8 +188,10 @@ class _StoreFormWidgetState extends State<StoreFormWidget> {
             labelText: 'Mô tả (Không bắt buộc)',
             border: OutlineInputBorder(),
           ),
+          maxLines: 3,
         ),
         const SizedBox(height: 16),
+        
         // Dropdown chọn mức giá
         DropdownButtonFormField<String>(
           value: _priceRangeController.text.isNotEmpty &&
@@ -184,6 +216,8 @@ class _StoreFormWidgetState extends State<StoreFormWidget> {
           validator: (value) => value == null ? 'Vui lòng chọn mức giá' : null,
         ),
         const SizedBox(height: 24),
+        
+        // Tiêu đề phần thực đơn
         const Text(
           'Thực đơn',
           style: TextStyle(
@@ -192,8 +226,16 @@ class _StoreFormWidgetState extends State<StoreFormWidget> {
             color: Colors.black87,
           ),
         ),
-        const SizedBox(height: 8),
-        // Hàng thêm món ăn
+        const SizedBox(height: 12),
+        
+        // Widget quét menu bằng OCR (inject use case từ DI container)
+        MenuOcrWidget(
+          extractMenuFromImage: di.sl<ExtractMenuFromImage>(),
+          onMenuExtracted: _handleOcrMenuExtracted,
+        ),
+        const SizedBox(height: 12),
+        
+        // Hàng thêm món ăn thủ công
         Row(
           children: [
             Expanded(
@@ -224,23 +266,71 @@ class _StoreFormWidgetState extends State<StoreFormWidget> {
           ],
         ),
         const SizedBox(height: 8),
+        
         // Danh sách món ăn đã thêm
         Consumer<StoreViewModel>(
           builder: (context, viewModel, child) {
-            return Column(
-              children: viewModel.menuItems.asMap().entries.map((entry) {
-                final index = entry.key;
-                final item = entry.value;
-                return ListTile(
-                  title: Text('${item.name}: ${item.price}'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () {
-                      Provider.of<StoreViewModel>(context, listen: false).removeMenuItem(index);
-                    },
+            if (viewModel.menuItems.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: const Center(
+                  child: Text(
+                    'Chưa có món ăn nào.\nSử dụng camera để quét menu hoặc thêm thủ công.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
                   ),
-                );
-              }).toList(),
+                ),
+              );
+            }
+            
+            return Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: viewModel.menuItems.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final item = viewModel.menuItems[index];
+                  return ListTile(
+                    // Số thứ tự món ăn
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.blue[100],
+                      child: Text(
+                        '${index + 1}',
+                        style: const TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    // Tên và giá món ăn
+                    title: Text(
+                      item.name,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    subtitle: Text(
+                      '${item.price} VNĐ',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                    // Nút xóa món ăn
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () {
+                        Provider.of<StoreViewModel>(context, listen: false).removeMenuItem(index);
+                      },
+                    ),
+                  );
+                },
+              ),
             );
           },
         ),
@@ -248,10 +338,12 @@ class _StoreFormWidgetState extends State<StoreFormWidget> {
     );
   }
 
+  // Getters để truy cập giá trị từ bên ngoài
   String? get name => _nameController.text.isNotEmpty ? _nameController.text : null;
   String? get description => _descriptionController.text.isNotEmpty ? _descriptionController.text : null;
   String? get priceRange => _priceRangeController.text.isNotEmpty ? _priceRangeController.text : null;
   String? get type => _selectedType;
 }
 
+/// Global key để truy cập state của StoreFormWidget từ bên ngoài
 final GlobalKey<_StoreFormWidgetState> storeFormKey = GlobalKey<_StoreFormWidgetState>();

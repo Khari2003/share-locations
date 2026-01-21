@@ -11,6 +11,7 @@ import 'package:my_app/presentation/widgets/storeFormWidget.dart';
 import 'package:provider/provider.dart';
 import 'package:my_app/core/constants/theme.dart';
 
+// Lớp màn hình chỉnh sửa thông tin nhà hàng
 class EditStoreScreen extends StatefulWidget {
   final StoreModel store;
 
@@ -20,19 +21,22 @@ class EditStoreScreen extends StatefulWidget {
   _EditStoreScreenState createState() => _EditStoreScreenState();
 }
 
+// Lớp trạng thái của màn hình chỉnh sửa nhà hàng
 class _EditStoreScreenState extends State<EditStoreScreen> {
-  final _formKey = GlobalKey<FormState>();
-  bool _isLoading = false;
+  final _formKey = GlobalKey<FormState>(); // Khóa biểu mẫu để kiểm tra dữ liệu
+  bool _isLoading = false; // Trạng thái tải dữ liệu
 
   @override
   void initState() {
     super.initState();
+    // Khởi tạo dữ liệu ban đầu từ nhà hàng
     final storeViewModel = Provider.of<StoreViewModel>(context, listen: false);
     storeViewModel.setLocation(widget.store.location ?? Location(address: '', city: '', coordinates: null));
     storeViewModel.setSelectedImages([]);
     storeViewModel.setMenuItems(widget.store.menu);
   }
 
+  // Lưu thông tin nhà hàng đã chỉnh sửa
   Future<void> _saveStore() async {
     if (_formKey.currentState!.validate()) {
       final storeViewModel = Provider.of<StoreViewModel>(context, listen: false);
@@ -44,6 +48,7 @@ class _EditStoreScreenState extends State<EditStoreScreen> {
         return;
       }
 
+      // Kiểm tra tọa độ vị trí
       if (storeViewModel.selectedLocation?.coordinates == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Vui lòng chọn vị trí có tọa độ')),
@@ -51,6 +56,7 @@ class _EditStoreScreenState extends State<EditStoreScreen> {
         return;
       }
 
+      // Tạo đối tượng nhà hàng mới với thông tin cập nhật
       final updatedStore = StoreModel(
         id: widget.store.id,
         name: formState.name ?? widget.store.name,
@@ -68,48 +74,53 @@ class _EditStoreScreenState extends State<EditStoreScreen> {
         createdAt: widget.store.createdAt,
       );
 
-      setState(() => _isLoading = true);
+      setState(() => _isLoading = true); // Bắt đầu trạng thái tải
 
+      // Gọi hàm cập nhật nhà hàng
       await storeViewModel.updateStore(widget.store.id!, updatedStore);
 
-      setState(() => _isLoading = false);
+      setState(() => _isLoading = false); // Kết thúc trạng thái tải
 
+      // Xử lý kết quả cập nhật
       if (storeViewModel.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Cập nhật cửa hàng thất bại: ${storeViewModel.errorMessage}')),
+          SnackBar(content: Text('Cập nhật nhà hàng thất bại: ${storeViewModel.errorMessage}')),
         );
       } else {
-        // Reset form after successful update
+        // Đặt lại biểu mẫu sau khi cập nhật thành công
         formState.reset();
         storeViewModel.reset();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cập nhật cửa hàng thành công')),
+          const SnackBar(content: Text('Cập nhật nhà hàng thành công')),
         );
-        Navigator.pushReplacementNamed(context, '/map');
+        Navigator.pushReplacementNamed(context, '/map'); // Chuyển hướng đến màn hình bản đồ
       }
     }
   }
 
+  // Xóa nhà hàng
   Future<void> _deleteStore() async {
-    setState(() => _isLoading = true);
+    setState(() => _isLoading = true); // Bắt đầu trạng thái tải
 
     final storeViewModel = Provider.of<StoreViewModel>(context, listen: false);
+    // Gọi hàm xóa nhà hàng
     await storeViewModel.deleteStore(widget.store.id!);
 
-    setState(() => _isLoading = false);
+    setState(() => _isLoading = false); // Kết thúc trạng thái tải
 
+    // Xử lý kết quả xóa
     if (storeViewModel.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Xóa cửa hàng thất bại: ${storeViewModel.errorMessage}')),
+        SnackBar(content: Text('Xóa nhà hàng thất bại: ${storeViewModel.errorMessage}')),
       );
     } else {
-      // Reset form after successful deletion
+      // Đặt lại biểu mẫu sau khi xóa thành công
       storeFormKey.currentState?.reset();
       storeViewModel.reset();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Xóa cửa hàng thành công')),
+        const SnackBar(content: Text('Xóa nhà hàng thành công')),
       );
-      Navigator.pushReplacementNamed(context, '/map');
+      Navigator.pushReplacementNamed(context, '/map'); // Chuyển hướng đến màn hình bản đồ
     }
   }
 
@@ -117,12 +128,13 @@ class _EditStoreScreenState extends State<EditStoreScreen> {
   Widget build(BuildContext context) {
     final initialPriceRange = widget.store.priceRange;
 
+    // Xây dựng giao diện màn hình chỉnh sửa
     return Theme(
       data: appTheme(),
       child: Scaffold(
         appBar: AppBar(
           title: const Text(
-            'Chỉnh sửa cửa hàng',
+            'Chỉnh sửa nhà hàng',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
           ),
           centerTitle: true,
@@ -148,7 +160,7 @@ class _EditStoreScreenState extends State<EditStoreScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Thông tin cửa hàng',
+                              'Thông tin nhà hàng',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -156,6 +168,7 @@ class _EditStoreScreenState extends State<EditStoreScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
+                            // Widget biểu mẫu thông tin nhà hàng
                             StoreFormWidget(
                               key: storeFormKey,
                               initialName: widget.store.name,
@@ -166,7 +179,7 @@ class _EditStoreScreenState extends State<EditStoreScreen> {
                             ),
                             const SizedBox(height: 24),
                             const Text(
-                              'Hình ảnh cửa hàng',
+                              'Hình ảnh nhà hàng',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -174,6 +187,7 @@ class _EditStoreScreenState extends State<EditStoreScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
+                            // Widget chọn hình ảnh
                             ImagePickerWidget(
                               initialImages: widget.store.images,
                               onImagesChanged: (List<XFile> images) {
@@ -182,7 +196,7 @@ class _EditStoreScreenState extends State<EditStoreScreen> {
                             ),
                             const SizedBox(height: 24),
                             const Text(
-                              'Vị trí cửa hàng',
+                              'Vị trí nhà hàng',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -190,6 +204,7 @@ class _EditStoreScreenState extends State<EditStoreScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
+                            // Widget chọn vị trí
                             AddressSelectionWidget(
                               initialLocation: widget.store.location,
                               onLocationChanged: (Location location) {
@@ -232,11 +247,12 @@ class _EditStoreScreenState extends State<EditStoreScreen> {
                                       onPressed: _isLoading
                                           ? null
                                           : () {
+                                              // Hiển thị hộp thoại xác nhận xóa
                                               showDialog(
                                                 context: context,
                                                 builder: (context) => AlertDialog(
                                                   title: const Text('Xác nhận xóa'),
-                                                  content: const Text('Bạn có chắc chắn muốn xóa cửa hàng này?'),
+                                                  content: const Text('Bạn có chắc chắn muốn xóa nhà hàng này?'),
                                                   actions: [
                                                     TextButton(
                                                       onPressed: () => Navigator.pop(context),
@@ -282,6 +298,7 @@ class _EditStoreScreenState extends State<EditStoreScreen> {
                 ),
               ),
             ),
+            // Hiển thị vòng tròn tải khi đang xử lý
             if (_isLoading)
               const Center(
                 child: CircularProgressIndicator(),

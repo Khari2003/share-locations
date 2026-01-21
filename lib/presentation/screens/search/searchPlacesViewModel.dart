@@ -11,7 +11,7 @@ class SearchPlacesViewModel extends ChangeNotifier {
   final SearchPlaces searchPlaces;
 
   SearchPlacesViewModel({required this.searchPlaces}) {
-    _loadDbData();
+    _loadProvinces();
   }
 
   SearchType _searchType = SearchType.specific;
@@ -19,11 +19,9 @@ class SearchPlacesViewModel extends ChangeNotifier {
   List<Map<String, String>> _results = [];
   bool _isLoading = false;
   List<Map<String, String>> _provinces = [];
-  List<Map<String, String>> _districts = [];
-  List<Map<String, String>> _communes = [];
+  List<Map<String, String>> _wards = [];
   String? _selectedProvince;
-  String? _selectedDistrict;
-  String? _selectedCommune;
+  String? _selectedWard;
   double _radius = 1000.0;
 
   SearchType get searchType => _searchType;
@@ -31,13 +29,11 @@ class SearchPlacesViewModel extends ChangeNotifier {
   List<Map<String, String>> get results => _results;
   bool get isLoading => _isLoading;
   List<Map<String, String>> get provinces => _provinces;
-  List<Map<String, String>> get districts => _districts;
-  List<Map<String, String>> get communes => _communes;
+  List<Map<String, String>> get wards => _wards;
   String? get selectedProvince => _selectedProvince;
-  String? get selectedDistrict => _selectedDistrict;
-  String? get selectedCommune => _selectedCommune;
+  String? get selectedWard => _selectedWard;
   double get radius => _radius;
-  bool get canSearchRegion => _selectedProvince != null; // Allow search with province only
+  bool get canSearchRegion => _selectedProvince != null;
 
   void updateSearchType(SearchType type) {
     _searchType = type;
@@ -52,22 +48,13 @@ class SearchPlacesViewModel extends ChangeNotifier {
 
   void updateProvince(String? value) async {
     _selectedProvince = value;
-    _selectedDistrict = null;
-    _selectedCommune = null;
-    _districts = await _loadDistricts(value);
-    _communes = [];
+    _selectedWard = null;
+    _wards = await _loadWards(value);
     notifyListeners();
   }
 
-  void updateDistrict(String? value) async {
-    _selectedDistrict = value;
-    _selectedCommune = null;
-    _communes = await _loadCommunes(value);
-    notifyListeners();
-  }
-
-  void updateCommune(String? value) {
-    _selectedCommune = value;
+  void updateWard(String? value) {
+    _selectedWard = value;
     notifyListeners();
   }
 
@@ -76,134 +63,138 @@ class SearchPlacesViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _loadDbData() async {
+  Future<void> _loadProvinces() async {
     try {
-      final String response = await rootBundle.loadString('assets/db.json');
-      final data = json.decode(response);
-      _provinces = (data['province'] as List<dynamic>).map((item) {
+      final String response = await rootBundle.loadString('province.json');
+      final Map<String, dynamic> data = json.decode(response);
+      
+      _provinces = data.entries.map((entry) {
+        final provinceData = entry.value as Map<String, dynamic>;
         return {
-          'idProvince': item['idProvince'].toString(),
-          'name': item['name'].toString(),
+          'code': provinceData['code'].toString(),
+          'name': provinceData['name'].toString(),
+          'name_with_type': provinceData['name_with_type'].toString(),
         };
       }).toList();
+      
       notifyListeners();
     } catch (e) {
-      print('Error loading db.json: $e');
+      print('Error loading province.json: $e');
     }
   }
 
-  Future<List<Map<String, String>>> _loadDistricts(String? provinceId) async {
-    if (provinceId == null) return [];
+  Future<List<Map<String, String>>> _loadWards(String? provinceCode) async {
+    if (provinceCode == null) return [];
     try {
-      final String response = await rootBundle.loadString('assets/db.json');
-      final data = json.decode(response);
-      return (data['district'] as List<dynamic>)
-          .where((district) => district['idProvince'].toString() == provinceId)
-          .map((item) {
-        return {
-          'idDistrict': item['idDistrict'].toString(),
-          'idProvince': item['idProvince'].toString(),
-          'name': item['name'].toString(),
-        };
-      }).toList();
+      final String response = await rootBundle.loadString('ward.json');
+      final Map<String, dynamic> data = json.decode(response);
+      
+      return data.entries
+          .where((entry) {
+            final wardData = entry.value as Map<String, dynamic>;
+            return wardData['parent_code'].toString() == provinceCode;
+          })
+          .map((entry) {
+            final wardData = entry.value as Map<String, dynamic>;
+            return {
+              'code': wardData['code'].toString(),
+              'name': wardData['name'].toString(),
+              'name_with_type': wardData['name_with_type'].toString(),
+              'parent_code': wardData['parent_code'].toString(),
+            };
+          })
+          .toList();
     } catch (e) {
-      print('Error loading districts: $e');
-      return [];
-    }
-  }
-
-  Future<List<Map<String, String>>> _loadCommunes(String? districtId) async {
-    if (districtId == null) return [];
-    try {
-      final String response = await rootBundle.loadString('assets/db.json');
-      final data = json.decode(response);
-      return (data['commune'] as List<dynamic>)
-          .where((commune) => commune['idDistrict'].toString() == districtId)
-          .map((item) {
-        return {
-          'idCommune': item['idCommune'].toString(),
-          'idDistrict': item['idDistrict'].toString(),
-          'name': item['name'].toString(),
-        };
-      }).toList();
-    } catch (e) {
-      print('Error loading communes: $e');
+      print('Error loading wards: $e');
       return [];
     }
   }
 
   Future<void> search() async {
+    // Kiểm tra điều kiện tìm kiếm trước khi thực hiện
     if (_searchType == SearchType.specific && _query.isEmpty) return;
     if (_searchType == SearchType.region && _selectedProvince == null) return;
 
+    // Đặt trạng thái đang tải và thông báo cho listeners
     _isLoading = true;
     notifyListeners();
 
     if (_searchType == SearchType.specific) {
+      // Tìm kiếm địa điểm cụ thể theo tên/địa chỉ
       final result = await searchPlaces(_query);
+      
       result.fold(
         (failure) {
+          // Xử lý lỗi khi tìm kiếm thất bại
           _results = [];
           print('Error searching places: $failure');
         },
         (places) {
+          // Chuyển đổi kết quả tìm kiếm sang định dạng map cho vị trí chính xác
           _results = places.map((place) {
             return {
               'lat': place.coordinates.latitude.toString(),
               'lon': place.coordinates.longitude.toString(),
               'name': place.name,
-              'type': 'exact',
+              'type': 'exact', // Đánh dấu là tìm kiếm vị trí chính xác
             };
           }).toList();
         },
       );
     } else {
-      // Build query based on available selections
+      // Tìm kiếm theo khu vực: Xây dựng truy vấn từ tỉnh/phường đã chọn
+      
+      // Tìm thông tin tỉnh/thành phố đã chọn
       final province = _provinces.firstWhere(
-        (p) => p['idProvince'] == _selectedProvince,
+        (p) => p['code'] == _selectedProvince,
         orElse: () => {},
       );
-      final district = _selectedDistrict != null
-          ? _districts.firstWhere(
-              (d) => d['idDistrict'] == _selectedDistrict,
-              orElse: () => {},
-            )
-          : {};
-      final commune = _selectedCommune != null
-          ? _communes.firstWhere(
-              (c) => c['idCommune'] == _selectedCommune,
+
+      // Tìm thông tin phường/xã đã chọn nếu có
+      final ward = _selectedWard != null
+          ? _wards.firstWhere(
+              (w) => w['code'] == _selectedWard,
               orElse: () => {},
             )
           : {};
 
-      // Construct query dynamically
+      // Xây dựng chuỗi truy vấn từ các đơn vị hành chính đã chọn
       List<String> queryParts = [];
-      if (commune['name'] != null) queryParts.add(commune['name']!);
-      if (district['name'] != null) queryParts.add(district['name']!);
-      if (province['name'] != null) queryParts.add(province['name']!);
+      if (ward['name'] != null && ward['name']!.isNotEmpty) {
+        queryParts.add(ward['name']!);
+      }
+      if (province['name'] != null && province['name']!.isNotEmpty) {
+        queryParts.add(province['name']!);
+      }
+      
+      // Nối các phần với dấu phẩy (ví dụ: "Hoàn Kiếm, Hà Nội")
       final query = queryParts.join(', ');
 
+      // Thực hiện tìm kiếm theo khu vực
       final result = await searchPlaces(query);
-
+      
       result.fold(
         (failure) {
+          // Xử lý lỗi khi tìm kiếm thất bại
           _results = [];
           print('Error searching region: $failure');
         },
         (places) {
+          // Chuyển đổi kết quả với loại khu vực và thông tin bán kính
           _results = places.map((place) {
             return {
               'lat': place.coordinates.latitude.toString(),
               'lon': place.coordinates.longitude.toString(),
               'name': place.name,
-              'type': 'region',
-              'radius': _radius.toString(),
+              'type': 'region', // Đánh dấu là tìm kiếm theo khu vực
+              'radius': _radius.toString(), // Bao gồm bán kính tìm kiếm
             };
           }).toList();
         },
       );
     }
 
+    // Tắt trạng thái đang tải và thông báo cho listeners
     _isLoading = false;
     notifyListeners();
   }

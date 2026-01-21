@@ -91,8 +91,8 @@ class SearchPlacesScreen extends StatelessWidget {
                                 value: viewModel.selectedProvince,
                                 items: viewModel.provinces.map((province) {
                                   return DropdownMenuItem(
-                                    value: province['idProvince'],
-                                    child: Text(province['name']!),
+                                    value: province['code'],
+                                    child: Text(province['name_with_type'] ?? ''),
                                   );
                                 }).toList(),
                                 onChanged: (value) {
@@ -102,35 +102,18 @@ class SearchPlacesScreen extends StatelessWidget {
                               const SizedBox(height: 16),
                               DropdownButtonFormField<String>(
                                 decoration: const InputDecoration(
-                                  labelText: 'Quận/Huyện',
-                                  border: OutlineInputBorder(),
-                                ),
-                                value: viewModel.selectedDistrict,
-                                items: viewModel.districts.map((district) {
-                                  return DropdownMenuItem(
-                                    value: district['idDistrict'],
-                                    child: Text(district['name']!),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  viewModel.updateDistrict(value);
-                                },
-                              ),
-                              const SizedBox(height: 16),
-                              DropdownButtonFormField<String>(
-                                decoration: const InputDecoration(
                                   labelText: 'Xã/Phường',
                                   border: OutlineInputBorder(),
                                 ),
-                                value: viewModel.selectedCommune,
-                                items: viewModel.communes.map((commune) {
+                                value: viewModel.selectedWard,
+                                items: viewModel.wards.map((ward) {
                                   return DropdownMenuItem(
-                                    value: commune['idCommune'],
-                                    child: Text(commune['name']!),
+                                    value: ward['code'],
+                                    child: Text(ward['name_with_type'] ?? ''),
                                   );
                                 }).toList(),
                                 onChanged: (value) {
-                                  viewModel.updateCommune(value);
+                                  viewModel.updateWard(value);
                                 },
                               ),
                               const SizedBox(height: 24),
@@ -162,7 +145,6 @@ class SearchPlacesScreen extends StatelessWidget {
                                               Navigator.pop(context, result);
                                             },
                                           ),
-                                          // Thêm Divider nếu không phải là item cuối cùng
                                           if (index < viewModel.results.length - 1)
                                             const Divider(
                                               color: Colors.blue,

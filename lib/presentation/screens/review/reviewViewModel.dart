@@ -26,19 +26,21 @@ class ReviewViewModel extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
-  // Gửi đánh giá mới
+  // Gửi đánh giá mới cho cửa hàng
   Future<void> submitReview({
-    required String storeId,
-    required int rating,
-    String? comment,
-    List<String> imagePaths = const [],
-    required String token,
+    required String storeId,      // ID của cửa hàng cần đánh giá
+    required int rating,          // Số sao đánh giá (thường từ 1-5)
+    String? comment,              // Nội dung bình luận (tùy chọn)
+    List<String> imagePaths = const [], // Danh sách đường dẫn hình ảnh đính kèm
+    required String token,        // Token xác thực người dùng
   }) async {
+    // Bật trạng thái loading và xóa lỗi cũ
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
+      // Gọi use case để thực hiện việc gửi đánh giá
       final result = await leaveReview.call(
         storeId: storeId,
         rating: rating,
@@ -47,52 +49,70 @@ class ReviewViewModel extends ChangeNotifier {
         token: token,
       );
 
+      // Xử lý kết quả trả về (Either<Failure, Review>)
       result.fold(
-        (failure) => _errorMessage = _mapFailureToMessage(failure),
+        (failure) {
+          // Trường hợp thất bại: chuyển đổi failure thành thông báo lỗi
+          _errorMessage = _mapFailureToMessage(failure);
+        },
         (review) {
-          _reviews.add(review); // Thêm đánh giá mới vào danh sách
+          // Trường hợp thành công: thêm đánh giá mới vào danh sách
+          _reviews.add(review);
           _errorMessage = null;
         },
       );
     } catch (e) {
+      // Xử lý các lỗi ngoại lệ không mong muốn
       _errorMessage = 'Đã xảy ra lỗi không xác định: $e';
     } finally {
+      // Tắt trạng thái loading và thông báo cho listeners
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Lấy danh sách đánh giá của cửa hàng
+  // Lấy danh sách đánh giá của cửa hàng với phân trang
   Future<void> fetchStoreReviews({
-    required String storeId,
-    required int page,
-    required String token,
+    required String storeId,  // ID của cửa hàng cần lấy đánh giá
+    required int page,        // Số trang cần lấy (pagination)
+    required String token,    // Token xác thực người dùng
   }) async {
+    // Bật trạng thái loading và xóa thông báo lỗi cũ
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
+      // Gọi use case để lấy danh sách đánh giá từ repository
       final result = await getStoreReviews.call(
         storeId: storeId,
         page: page,
         token: token,
       );
 
+      // Xử lý kết quả trả về (Either<Failure, List<Review>>)
       result.fold(
-        (failure) => _errorMessage = _mapFailureToMessage(failure),
+        (failure) {
+          // Trường hợp thất bại: chuyển đổi failure thành thông báo lỗi
+          _errorMessage = _mapFailureToMessage(failure);
+        },
         (reviews) {
+          // Trường hợp thành công: xử lý danh sách đánh giá
           if (page == 1) {
-            _reviews = reviews; // Đặt lại danh sách nếu là trang đầu
+            // Nếu là trang đầu tiên: thay thế toàn bộ danh sách (refresh)
+            _reviews = reviews;
           } else {
-            _reviews.addAll(reviews); // Thêm vào danh sách nếu là các trang tiếp theo
+            // Nếu là trang tiếp theo: thêm vào cuối danh sách hiện tại (load more)
+            _reviews.addAll(reviews);
           }
           _errorMessage = null;
         },
       );
     } catch (e) {
+      // Xử lý các lỗi ngoại lệ không mong muốn
       _errorMessage = 'Đã xảy ra lỗi không xác định: $e';
     } finally {
+      // Tắt trạng thái loading và thông báo cho listeners cập nhật UI
       _isLoading = false;
       notifyListeners();
     }

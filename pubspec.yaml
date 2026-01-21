@@ -52,3 +52,5 @@ flutter:
     - assets/location-arrow.svg
     - assets/welcome.png
     - assets/db.json
+    - assets/province.json
+    - assets/ward.json
